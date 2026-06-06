@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FarmersPulse | Sign In</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='images/FarmersPulse_logo.png') }}">
+  <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+  <style>
+    /* ── PAGE LOAD: left panel slides in from left, form panel fades up ── */
+    .auth-panel-left {
+      animation: panelSlideIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .auth-forms-panel {
+      animation: formsFadeUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+    }
+
+    @keyframes panelSlideIn {
+      from { transform: translateX(-60px); opacity: 0; }
+      to   { transform: translateX(0);     opacity: 1; }
+    }
+
+    @keyframes formsFadeUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    /* ── LOGO bounces in ── */
+    .auth-logo {
+      animation: logoBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+    }
+
+    @keyframes logoBounce {
+      from { transform: scale(0.6) translateY(-10px); opacity: 0; }
+      to   { transform: scale(1)   translateY(0);     opacity: 1; }
+    }
+
+    /* ── Pulse bars animate in one by one ── */
+    .pulse-bars span:nth-child(1) { animation: barAppear 0.5s ease 0.5s both, pbar 1.2s ease-in-out 1.0s infinite; }
+    .pulse-bars span:nth-child(2) { animation: barAppear 0.5s ease 0.6s both, pbar 1.2s ease-in-out 1.1s infinite; }
+    .pulse-bars span:nth-child(3) { animation: barAppear 0.5s ease 0.7s both, pbar 1.2s ease-in-out 1.2s infinite; }
+    .pulse-bars span:nth-child(4) { animation: barAppear 0.5s ease 0.8s both, pbar 1.2s ease-in-out 1.3s infinite; }
+    .pulse-bars span:nth-child(5) { animation: barAppear 0.5s ease 0.9s both, pbar 1.2s ease-in-out 1.4s infinite; }
+
+    @keyframes barAppear {
+      from { transform: scaleY(0); opacity: 0; }
+      to   { transform: scaleY(1); opacity: 1; }
+    }
+
+    /* ── Tagline text slides up ── */
+    .auth-panel-tagline {
+      animation: taglineUp 0.7s ease 0.4s both;
+    }
+
+    @keyframes taglineUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    /* ── Decorative circles drift in ── */
+    .decor-circle.c1 { animation: driftIn 1.2s ease 0.2s both; }
+    .decor-circle.c2 { animation: driftIn 1.2s ease 0.4s both; }
+    .decor-circle.c3 { animation: driftIn 1.2s ease 0.6s both; }
+
+    @keyframes driftIn {
+      from { transform: scale(0.3); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    /* ── Form header fades in ── */
+    .form-header {
+      animation: headerFade 0.5s ease 0.3s both;
+    }
+
+    @keyframes headerFade {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0);     }
+    }
+
+    /* ── Each form field staggered slide up on page load ── */
+    .auth-form-container.active .form-group,
+    .auth-form-container.active .form-row,
+    .auth-form-container.active .form-check-row,
+    .auth-form-container.active .btn-auth {
+      animation: fieldUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .auth-form-container.active .form-group:nth-child(1),
+    .auth-form-container.active .form-row:nth-child(1)   { animation-delay: 0.35s; }
+    .auth-form-container.active .form-group:nth-child(2),
+    .auth-form-container.active .form-row:nth-child(2)   { animation-delay: 0.45s; }
+    .auth-form-container.active .form-group:nth-child(3),
+    .auth-form-container.active .form-row:nth-child(3)   { animation-delay: 0.55s; }
+    .auth-form-container.active .form-group:nth-child(4),
+    .auth-form-container.active .form-row:nth-child(4)   { animation-delay: 0.60s; }
+    .auth-form-container.active .form-group:nth-child(5),
+    .auth-form-container.active .form-row:nth-child(5)   { animation-delay: 0.65s; }
+    .auth-form-container.active .form-check-row          { animation-delay: 0.70s; }
+    .auth-form-container.active .btn-auth                { animation-delay: 0.75s; }
+
+    @keyframes fieldUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    /* ── Input focus glow ring ── */
+    .input-wrap input:focus,
+    .input-wrap select:focus {
+      box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.15);
+      transition: box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+
+    /* ── Submit button ripple + hover lift ── */
+    .btn-auth {
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s;
+    }
+
+    .btn-auth:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(46, 125, 50, 0.35);
+    }
+
+    .btn-auth:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .btn-auth .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.35);
+      transform: scale(0);
+      animation: rippleAnim 0.55s linear;
+      pointer-events: none;
+    }
+
+    @keyframes rippleAnim {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    /* ── Switch button hover ── */
+    .btn-switch {
+      transition: transform 0.2s ease, background 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-switch:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    /* ── Panel slide transition (Login ↔ Register) ── */
+    .auth-form-container {
+      transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .auth-form-container:not(.active) {
+      opacity: 0;
+      transform: translateX(20px);
+      pointer-events: none;
+      position: absolute;
+      width: 100%;
+    }
+
+    .auth-form-container.active {
+      opacity: 1;
+      transform: translateX(0);
+      position: relative;
+    }
+
+    .auth-forms-panel {
+      position: relative;
+      overflow: visible;
+    }
+
+    .ts-dropdown { z-index: 9999 !important; }
+    .ts-wrapper  { position: relative; z-index: 999; }
+
+    /* ── Left panel text crossfade on switch ── */
+    .auth-panel-tagline {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .auth-panel-tagline.switching {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    .ts-control {
+      border-radius: 8px;
+      padding-left: 35px;
+    }
+
+    /* ===== INPUT WRAP ===== */
+    .input-wrap { position: relative; width: 100%; }
+
+    /* ===== LEFT ICON ===== */
+    .input-wrap i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #888;
+      z-index: 2;
+    }
+
+    /* ===== EYE ICON BUTTON ===== */
+    .toggle-pw {
+      position: absolute;
+      right: 34px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #666;
+      font-size: 16px;
+      z-index: 3;
+    }
+
+    .toggle-pw:hover { color: #2e7d32; }
+
+    /* ══════════════════════════════════════════
+       CONSENT CHECKBOX
+    ══════════════════════════════════════════ */
+    .consent-box {
+      background: #f9fdf9;
+      border: 1px solid #c8e6c9;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+    }
+
+    .consent-box.error {
+      border-color: #e53935;
+      background: #fff5f5;
+      box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
+    }
+
+    .consent-box .consent-inner {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .consent-box input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      margin-top: 2px;
+      flex-shrink: 0;
+      accent-color: #2e7d32;
+      cursor: pointer;
+    }
+
+    .consent-box label {
+      font-size: 13px;
+      color: #444;
+      line-height: 1.7;
+      cursor: pointer;
+    }
+
+    .consent-policy-link {
+      background: none;
+      border: none;
+      color: #2e7d32;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      transition: opacity 0.2s;
+    }
+
+    .consent-policy-link:hover { opacity: 0.75; }
+
+    .consent-error-msg {
+      display: none;
+      color: #c62828;
+      font-size: 12px;
+      margin-top: 8px;
+      padding-left: 27px;
+      font-weight: 500;
+    }
+
+    .consent-error-msg i { margin-right: 4px; }
+
+    /* ══════════════════════════════════════════
+       PRIVACY MODAL
+    ══════════════════════════════════════════ */
+    #privacyModalOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      z-index: 999999;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      backdrop-filter: blur(2px);
+      animation: overlayFadeIn 0.2s ease both;
+    }
+
+    #privacyModalOverlay.open { display: flex; }
+
+    @keyframes overlayFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    #privacyModal {
+      background: #fff;
+      border-radius: 14px;
+      max-width: 580px;
+      width: 100%;
+      max-height: 84vh;
+      overflow-y: auto;
+      border: 0.5px solid #e0e0e0;
+      animation: modalSlideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+      scrollbar-width: thin;
+      scrollbar-color: #c8e6c9 transparent;
+    }
+
+    #privacyModal::-webkit-scrollbar       { width: 5px; }
+    #privacyModal::-webkit-scrollbar-track { background: transparent; }
+    #privacyModal::-webkit-scrollbar-thumb { background: #c8e6c9; border-radius: 99px; }
+
+    @keyframes modalSlideUp {
+      from { transform: translateY(24px) scale(0.97); opacity: 0; }
+      to   { transform: translateY(0)    scale(1);    opacity: 1; }
+    }
+
+    .pm-header {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 14px 14px 0 0;
+      z-index: 10;
+    }
+
+    .pm-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pm-shield-icon {
+      width: 36px;
+      height: 36px;
+      background: #eaf3de;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .pm-header h2 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0;
+      color: #1a1a1a;
+    }
+
+    .pm-header p {
+      font-size: 12px;
+      color: #888;
+      margin: 2px 0 0;
+    }
+
+    .pm-close-btn {
+      background: #f5f5f5;
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      color: #666;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .pm-close-btn:hover { background: #eee; color: #333; }
+
+    .pm-body { padding: 22px 24px; }
+
+    .pm-section { margin-bottom: 22px; }
+
+    .pm-section:last-child { margin-bottom: 0; }
+
+    .pm-section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+
+    .pm-section-num {
+      width: 22px;
+      height: 22px;
+      background: #eaf3de;
+      color: #2e7d32;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .pm-section h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin: 0;
+    }
+
+    .pm-section p,
+    .pm-section li {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.75;
+      margin: 0;
+    }
+
+    .pm-section ul {
+      padding-left: 16px;
+      margin: 0;
+    }
+
+    .pm-section ul li { margin-bottom: 4px; }
+    .pm-section ul li:last-child { margin-bottom: 0; }
+
+    .pm-compliance-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #eaf3de;
+      color: #2e7d32;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 99px;
+      margin-top: 10px;
+    }
+
+    .pm-footer {
+      padding: 16px 20px;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #fafafa;
+      border-radius: 0 0 14px 14px;
+    }
+
+    .pm-footer-note {
+      font-size: 12px;
+      color: #999;
+      flex: 1;
+    }
+
+    .pm-footer-actions { display: flex; gap: 10px; }
+
+    .pm-btn-close {
+      background: none;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-size: 13px;
+      cursor: pointer;
+      color: #666;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .pm-btn-close:hover { background: #f5f5f5; border-color: #bbb; }
+
+    .pm-btn-accept {
+      background: #2e7d32;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    .pm-btn-accept:hover {
+      background: #1b5e20;
+      transform: translateY(-1px);
+    }
+
+    .pm-divider {
+      border: none;
+      border-top: 1px solid #f0f0f0;
+      margin: 20px 0;
+    }
+  </style>
+
+</head>
+
+<body class="auth-body">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="toast-container">
+    {% for c, m in messages %}
+    <div class="toast toast-{{ c }}">
+      <i class="fas fa-{% if c=='success' %}check-circle{% else %}exclamation-circle{% endif %}"></i> {{ m }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <div class="auth-wrapper" id="authWrapper">
+    <div class="auth-panel-left">
+      <div class="auth-decor">
+        <span class="decor-circle c1"></span>
+        <span class="decor-circle c2"></span>
+        <span class="decor-circle c3"></span>
+      </div>
+      <div class="auth-panel-content">
+        <div class="auth-logo">
+          <img src="{{ url_for('static', filename='images/FarmersPulse_logo.png') }}" alt="FarmersPulse Logo" class="logo-img">
+          <span class="logo-green">Farmers</span><span class="logo-orange">Pulse</span>
+          <div class="pulse-bars"><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="auth-panel-tagline" id="panelTagline">
+          <h2>Welcome Back</h2>
+          <p>Sign in to access your personalized farming dashboard, market updates, weather alerts, and advisories.</p>
+        </div>
+        <div class="auth-panel-switch">
+          <span>Don't have an account?</span>
+          <button class="btn-switch" id="showRegister">Create Account <i class="fas fa-arrow-right"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-forms-panel">
+      <!-- Mobile logo -->
+      <div class="mobile-logo">
+        <img src="{{ url_for('static', filename='images/FarmersPulse_Logo.png') }}" alt="" class="logo-img">
+        <span class="logo-green">Farmers</span><span class="logo-orange">Pulse</span>
+      </div>
+
+      <!-- ═══════════════ LOGIN ═══════════════ -->
+      <div class="auth-form-container active" id="loginForm">
+        <div class="form-header">
+          <h2>Sign In</h2>
+          <p>Enter your credentials to continue</p>
+        </div>
+        <form method="POST" action="{{ url_for('login') }}">
+          <div class="form-group">
+            <label>Username or Email</label>
+            <div class="input-wrap">
+              <i class="fas fa-user"></i>
+              <input type="text" name="username" placeholder="Username or email" required autocomplete="username">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <div class="input-wrap">
+              <i class="fas fa-lock"></i>
+              <input type="password" name="password" id="loginPw" placeholder="Password" required>
+              <button type="button" class="toggle-pw" onclick="togglePw('loginPw')">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div class="form-check-row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <label class="checkbox-label">
+              <input type="checkbox" name="remember">
+              <span>Remember me</span>
+            </label>
+            <a href="{{ url_for('forgot_password') }}" class="forgot-pw-link"
+              style="font-size:13px;color:#2e7d32;text-decoration:none;font-weight:500;white-space:nowrap;transition:opacity 0.2s;"
+              onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+              <i class="fas fa-key" style="margin-right:4px;font-size:11px;"></i>Forgot password?
+            </a>
+          </div>
+          <button type="submit" class="btn-auth">Sign In <i class="fas fa-arrow-right"></i></button>
+        </form>
+        <div class="form-footer-mobile">
+          <span>Don't have an account?</span>
+          <button class="link-btn" id="showRegMobile">Sign Up</button>
+        </div>
+      </div>
+
+      <!-- ═══════════════ REGISTER ═══════════════ -->
+      <div class="auth-form-container" id="registerForm">
+        <div class="form-header">
+          <h2>Create Account</h2>
+          <p>Join Hundreds of Kenyan farmers</p>
+        </div>
+        <form method="POST" action="{{ url_for('register') }}" id="regForm">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Full Name</label>
+              <div class="input-wrap">
+                <i class="fas fa-id-card"></i>
+                <input type="text" name="full_name" placeholder="Your full name" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Username</label>
+              <div class="input-wrap">
+                <i class="fas fa-user"></i>
+                <input type="text" name="username" placeholder="Choose username" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email</label>
+              <div class="input-wrap">
+                <i class="fas fa-envelope"></i>
+                <input type="email" name="email" placeholder="name@farmerspulse.com" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Phone</label>
+              <div class="input-wrap">
+                <i class="fas fa-phone"></i>
+                <input type="text" name="phone" placeholder="07XXXXXXXX">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>County</label>
+              <div class="input-wrap">
+                <i class="fas fa-map-marker-alt"></i>
+                <select name="county">
+                  <option value="" selected>Select County</option>
+                  <option value="Mombasa">Mombasa</option>
+                  <option value="Kwale">Kwale</option>
+                  <option value="Kilifi">Kilifi</option>
+                  <option value="Tana River">Tana River</option>
+                  <option value="Lamu">Lamu</option>
+                  <option value="Taita Taveta">Taita Taveta</option>
+                  <option value="Garissa">Garissa</option>
+                  <option value="Wajir">Wajir</option>
+                  <option value="Mandera">Mandera</option>
+                  <option value="Marsabit">Marsabit</option>
+                  <option value="Isiolo">Isiolo</option>
+                  <option value="Meru">Meru</option>
+                  <option value="Tharaka-Nithi">Tharaka-Nithi</option>
+                  <option value="Embu">Embu</option>
+                  <option value="Kitui">Kitui</option>
+                  <option value="Machakos">Machakos</option>
+                  <option value="Makueni">Makueni</option>
+                  <option value="Nyandarua">Nyandarua</option>
+                  <option value="Nyeri">Nyeri</option>
+                  <option value="Kirinyaga">Kirinyaga</option>
+                  <option value="Murang'a">Murang'a</option>
+                  <option value="Kiambu">Kiambu</option>
+                  <option value="Turkana">Turkana</option>
+                  <option value="West Pokot">West Pokot</option>
+                  <option value="Samburu">Samburu</option>
+                  <option value="Trans Nzoia">Trans Nzoia</option>
+                  <option value="Uasin Gishu">Uasin Gishu</option>
+                  <option value="Elgeyo-Marakwet">Elgeyo-Marakwet</option>
+                  <option value="Nandi">Nandi</option>
+                  <option value="Baringo">Baringo</option>
+                  <option value="Laikipia">Laikipia</option>
+                  <option value="Nakuru">Nakuru</option>
+                  <option value="Narok">Narok</option>
+                  <option value="Kajiado">Kajiado</option>
+                  <option value="Kericho">Kericho</option>
+                  <option value="Bomet">Bomet</option>
+                  <option value="Kakamega">Kakamega</option>
+                  <option value="Vihiga">Vihiga</option>
+                  <option value="Bungoma">Bungoma</option>
+                  <option value="Busia">Busia</option>
+                  <option value="Siaya">Siaya</option>
+                  <option value="Kisumu">Kisumu</option>
+                  <option value="Homa Bay">Homa Bay</option>
+                  <option value="Migori">Migori</option>
+                  <option value="Kisii">Kisii</option>
+                  <option value="Nyamira">Nyamira</option>
+                  <option value="Nairobi">Nairobi</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Farm Size</label>
+              <div class="input-wrap">
+                <i class="fas fa-expand"></i>
+                <select name="farm_size">
+                  <option value="" selected>Select Size</option>
+                  <option>Less than 1 acre</option>
+                  <option>1-5 acres</option>
+                  <option>5-10 acres</option>
+                  <option>10-50 acres</option>
+                  <option>50+ acres</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" style="width:100%;box-sizing:border-box;">
+            <label>Crop Types <span class="hint">(select multiple)</span></label>
+            <div class="input-wrap" style="width:100%;box-sizing:border-box;">
+              <i class="fas fa-seedling"></i>
+              <select id="crop_types" name="crop_types[]" multiple placeholder="Select crops...">
+                <option value="Tea">Tea</option>
+                <option value="Coffee">Coffee</option>
+                <option value="Sugarcane">Sugarcane</option>
+                <option value="Cotton">Cotton</option>
+                <option value="Pyrethrum">Pyrethrum</option>
+                <option value="Tobacco">Tobacco</option>
+                <option value="Cashew Nuts">Cashew Nuts</option>
+                <option value="Macadamia">Macadamia</option>
+                <option value="Sisal">Sisal</option>
+                <option value="Horticulture">Horticulture</option>
+                <option value="Flowers">Flowers</option>
+                <option value="Avocado">Avocado</option>
+                <option value="Mangoes">Mangoes</option>
+                <option value="Bananas">Bananas</option>
+                <option value="Pineapples">Pineapples</option>
+                <option value="Maize">Maize</option>
+                <option value="Beans">Beans</option>
+                <option value="Wheat">Wheat</option>
+                <option value="Sorghum">Sorghum</option>
+                <option value="Millet">Millet</option>
+                <option value="Potatoes">Potatoes</option>
+                <option value="Sweet Potatoes">Sweet Potatoes</option>
+                <option value="Rice">Rice</option>
+                <option value="Cassava">Cassava</option>
+                <option value="Tomatoes">Tomatoes</option>
+                <option value="Onions">Onions</option>
+                <option value="Cabbage">Cabbage</option>
+                <option value="Spinach">Spinach</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Password</label>
+              <div class="input-wrap">
+                <i class="fas fa-lock"></i>
+                <input type="password" name="password" id="regPw" placeholder="Password (minimum 6)" required minlength="6">
+                <button type="button" class="toggle-pw" onclick="togglePw('regPw')">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Confirm Password</label>
+              <div class="input-wrap">
+                <i class="fas fa-lock"></i>
+                <input type="password" name="confirm_password" id="regConf" placeholder="Confirm password" required>
+                <button type="button" class="toggle-pw" onclick="togglePw('regConf')">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ DATA PRIVACY CONSENT ══ -->
+          <div class="consent-box" id="consentBox">
+            <div class="consent-inner">
+              <input type="checkbox" id="privacyConsent" name="privacy_consent">
+              <label for="privacyConsent">
+                I have read and agree to FarmersPulse's
+                <button type="button" class="consent-policy-link" onclick="openPrivacyModal()">
+                  Data Privacy &amp; Usage Policy
+                </button>.
+                I consent to my farm data being used to provide personalised advisories,
+                market updates, and weather alerts.
+              </label>
+            </div>
+            <p class="consent-error-msg" id="consentError">
+              <i class="fas fa-exclamation-circle"></i>
+              You must agree to the privacy policy to create an account.
+            </p>
+          </div>
+
+          <button type="submit" class="btn-auth">Create Account <i class="fas fa-arrow-right"></i></button>
+        </form>
+        <div class="form-footer-mobile">
+          <span>Already have an account?</span>
+          <button class="link-btn" id="showLoginMobile">Sign In</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       PRIVACY MODAL
+  ══════════════════════════════════════════ -->
+  <div id="privacyModalOverlay" onclick="closePrivacyModal(event)">
+    <div id="privacyModal" onclick="event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="pm-header">
+        <div class="pm-header-left">
+          <div class="pm-shield-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Data Privacy &amp; Usage Policy</h2>
+            <p>FarmersPulse Kenya · Last updated April 2025</p>
+          </div>
+        </div>
+        <button type="button" class="pm-close-btn" onclick="closePrivacyModalBtn()" aria-label="Close">×</button>
+      </div>
+
+      <!-- Body -->
+      <div class="pm-body">
+
+        <div class="pm-section">
+          <div class="pm-section-header">
+            <div class="pm-section-num">1</div>
+            <h3>What data we collect</h3>
+          </div>
+          <p>We collect your name, email address, phone number, county, farm size, and crop types when you register. We may also collect usage patterns within the platform — such as pages visited and features used — to improve our services and tailor your experience.</p>
+        </div>
+
+        <hr class="pm-divider">
+
+        <div class="pm-section">
+          <div class="pm-section-header">
+            <div class="pm-section-num">2</div>
+            <h3>How we use your data</h3>
+          </div>
+          <ul>
+            <li>Deliver personalised farming advisories based on your crops and location</li>
+            <li>Send weather alerts and forecasts relevant to your county</li>
+            <li>Provide market price updates for your specific crop types</li>
+            <li>Improve platform features and overall user experience</li>
+            <li>Send important service, account, and safety notifications</li>
+          </ul>
+        </div>
+
+        <hr class="pm-divider">
+
+        <div class="pm-section">
+          <div class="pm-section-header">
+            <div class="pm-section-num">3</div>
+            <h3>Data sharing</h3>
+          </div>
+          <p>We do <strong>not</strong> sell your personal data to third parties. We may share anonymised, aggregated data with agricultural research partners or government bodies — such as the Kenya Ministry of Agriculture — to support crop planning and national food security initiatives. Your individual identity is never disclosed.</p>
+        </div>
+
+        <hr class="pm-divider">
+
+        <div class="pm-section">
+          <div class="pm-section-header">
+            <div class="pm-section-num">4</div>
+            <h3>Data security</h3>
+          </div>
+          <p>Your data is stored securely using industry-standard encryption (AES-256 at rest, TLS 1.2+ in transit). Access is restricted to authorised FarmersPulse staff only. We conduct regular security audits and reviews to protect your information from unauthorised access.</p>
+        </div>
+
+        <hr class="pm-divider">
+
+        <div class="pm-section">
+          <div class="pm-section-header">
+            <div class="pm-section-num">5</div>
+            <h3>Your rights</h3>
+          </div>
+          <ul>
+            <li>Request access to the personal data we hold about you</li>
+            <li>Request correction or deletion of your data at any time</li>
+            <li>Withdraw consent at any time — your account will be deactivated</li>
+            <li>Lodge a complaint with the Office of the Data Protection Commissioner (ODPC) Kenya</li>
+            <li>Contact us at <a href="mailto:privacy@farmerspulse.co.ke" style="color:#2e7d32;font-weight:500;">privacy@farmerspulse.co.ke</a> for any data-related queries</li>
+          </ul>
+        </div>
+
+        <hr class="pm-divider">
+
+        <div class="pm-section">
+          <div class="pm-section-header">
+            <div class="pm-section-num">6</div>
+            <h3>Legal compliance</h3>
+          </div>
+          <p>FarmersPulse operates in full compliance with the <strong>Kenya Data Protection Act, 2019</strong>. By creating an account you acknowledge that you have read, understood, and agreed to this policy. We reserve the right to update this policy — significant changes will be communicated via email or platform notification.</p>
+          <div class="pm-compliance-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Kenya Data Protection Act, 2019 Compliant
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="pm-footer">
+        <span class="pm-footer-note">Tick "Accept &amp; Close" to auto-check the consent box.</span>
+        <div class="pm-footer-actions">
+          <button type="button" class="pm-btn-close" onclick="closePrivacyModalBtn()">Close</button>
+          <button type="button" class="pm-btn-accept" onclick="acceptPrivacyAndClose()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Accept &amp; Close
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <!-- END PRIVACY MODAL -->
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    const wrap = document.getElementById('authWrapper');
+    const lf   = document.getElementById('loginForm');
+    const rf   = document.getElementById('registerForm');
+    const pt   = document.getElementById('panelTagline');
+
+    function showReg() {
+      pt.classList.add('switching');
+      setTimeout(() => {
+        pt.innerHTML = '<h2>Already a Member?</h2><p>Sign in to access your farm dashboard and personalized advisories.</p>';
+        pt.classList.remove('switching');
+      }, 300);
+      wrap.classList.add('register-mode');
+      lf.classList.remove('active');
+      rf.classList.add('active');
+      document.querySelector('.auth-panel-switch span').textContent = 'Already have an account?';
+      const btn = document.getElementById('showRegister');
+      btn.innerHTML = 'Sign In <i class="fas fa-arrow-right"></i>';
+      btn.onclick = showLogin;
+    }
+
+    function showLogin() {
+      pt.classList.add('switching');
+      setTimeout(() => {
+        pt.innerHTML = '<h2>Welcome Back</h2><p>Sign in to access your personalized farming dashboard, market updates, weather alerts, and advisories.</p>';
+        pt.classList.remove('switching');
+      }, 300);
+      wrap.classList.remove('register-mode');
+      rf.classList.remove('active');
+      lf.classList.add('active');
+      document.querySelector('.auth-panel-switch span').textContent = "Don't have an account?";
+      const btn = document.getElementById('showRegister');
+      btn.innerHTML = 'Create Account <i class="fas fa-arrow-right"></i>';
+      btn.onclick = showReg;
+    }
+
+    document.getElementById('showRegister').addEventListener('click', showReg);
+    document.getElementById('showRegMobile').addEventListener('click', showReg);
+    document.getElementById('showLoginMobile').addEventListener('click', showLogin);
+
+    /* ── Password visibility toggle ── */
+    function togglePw(id) {
+      const el   = document.getElementById(id);
+      const icon = el.nextElementSibling.querySelector('i');
+      if (el.type === 'password') {
+        el.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        el.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    }
+
+    /* ── Ripple effect on submit button ── */
+    document.querySelectorAll('.btn-auth').forEach(btn => {
+      btn.addEventListener('click', function (e) {
+        const ripple = document.createElement('span');
+        ripple.classList.add('ripple');
+        const rect = this.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        ripple.style.width  = ripple.style.height = size + 'px';
+        ripple.style.left   = (e.clientX - rect.left - size / 2) + 'px';
+        ripple.style.top    = (e.clientY - rect.top  - size / 2) + 'px';
+        this.appendChild(ripple);
+        ripple.addEventListener('animationend', () => ripple.remove());
+      });
+    });
+
+    /* ── Register form validation (passwords + consent) ── */
+    document.getElementById('regForm').addEventListener('submit', function (e) {
+      const pw      = document.getElementById('regPw').value;
+      const conf    = document.getElementById('regConf').value;
+      const consent = document.getElementById('privacyConsent').checked;
+      let   blocked = false;
+
+      if (pw !== conf) {
+        e.preventDefault();
+        showToast('Passwords do not match!', 'error');
+        blocked = true;
+      }
+
+      if (!consent) {
+        e.preventDefault();
+        const box = document.getElementById('consentBox');
+        const msg = document.getElementById('consentError');
+        box.classList.add('error');
+        msg.style.display = 'block';
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        blocked = true;
+      }
+    });
+
+    /* Remove error state when user checks the box */
+    document.getElementById('privacyConsent').addEventListener('change', function () {
+      if (this.checked) {
+        document.getElementById('consentBox').classList.remove('error');
+        document.getElementById('consentError').style.display = 'none';
+      }
+    });
+
+    /* ── Privacy Modal ── */
+    function openPrivacyModal() {
+      document.getElementById('privacyModalOverlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closePrivacyModalBtn() {
+      document.getElementById('privacyModalOverlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function closePrivacyModal(e) {
+      if (e.target === document.getElementById('privacyModalOverlay')) {
+        closePrivacyModalBtn();
+      }
+    }
+
+    function acceptPrivacyAndClose() {
+      document.getElementById('privacyConsent').checked = true;
+      document.getElementById('consentBox').classList.remove('error');
+      document.getElementById('consentError').style.display = 'none';
+      closePrivacyModalBtn();
+    }
+
+    /* Close modal on Escape key */
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closePrivacyModalBtn();
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+  <script>
+    new TomSelect("#crop_types", {
+      plugins: ['remove_button'],
+      maxItems: null,
+      create: false,
+      placeholder: "Select crops...",
+      sortField: { field: "text", direction: "asc" },
+      dropdownParent: 'body'
+    });
+  </script>
+
+</body>
+</html>

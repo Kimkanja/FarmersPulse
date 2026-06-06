@@ -1,0 +1,619 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | FarmersPulse{% endblock %}
+{% block body_class %}farmer-body{% endblock %}
+{% block content %}
+
+<!-- ══ PAGE LOADER (breathing logo) ══ -->
+<div id="fp-page-loader">
+  <div class="loader-logo-wrap">
+    <img src="{{ url_for('static', filename='images/FarmersPulse_logo.png') }}" alt="Loading" class="loader-logo-img">
+    <div class="loader-logo-text"><span class="logo-green">Farmers</span><span class="logo-orange">Pulse</span></div>
+    <p class="loader-tagline">Loading your farming dashboard…</p>
+    <div class="loader-dots"><span></span><span></span><span></span></div>
+  </div>
+</div>
+
+<!-- ══ API CALL MINI LOADER (top strip) ══ -->
+<div id="fp-api-loader">
+  <img src="{{ url_for('static', filename='images/FarmersPulse_logo.png') }}" alt="" class="api-loader-logo">
+  <span class="api-loader-text">Fetching latest farming insights…</span>
+</div>
+
+<div class="fp-layout">
+  <!-- SIDEBAR -->
+  <aside class="fp-sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-green">Farmers</span><span class="logo-orange">Pulse</span>
+      <button class="sidebar-close" id="sidebarClose"><i class="fas fa-times"></i></button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('dashboard') }}"
+        class="nav-item {% if not request.args.get('category') and request.endpoint=='dashboard' %}active{% endif %}"><i
+          class="fas fa-home"></i><span>Dashboard</span></a>
+      <a href="{{ url_for('dashboard', category='market') }}"
+        class="nav-item {% if request.args.get('category')=='market' %}active{% endif %}"><i
+          class="fas fa-chart-line"></i><span>Market Updates</span></a>
+      <a href="{{ url_for('dashboard', category='advisory') }}"
+        class="nav-item {% if request.args.get('category')=='advisory' %}active{% endif %}"><i
+          class="fas fa-leaf"></i><span>Advisories</span></a>
+      <a href="{{ url_for('dashboard', category='weather') }}"
+        class="nav-item {% if request.args.get('category')=='weather' %}active{% endif %}"><i
+          class="fas fa-cloud-sun"></i><span>Weather</span></a>
+      <a href="{{ url_for('dashboard', category='pest') }}"
+        class="nav-item {% if request.args.get('category')=='pest' %}active{% endif %}"><i
+          class="fas fa-bug"></i><span>Pest Alerts</span></a>
+      <a href="{{ url_for('saved_posts') }}"
+        class="nav-item {% if request.endpoint=='saved_posts' %}active{% endif %}"><i
+          class="fas fa-bookmark"></i><span>Saved Posts</span></a>
+      <a href="{{ url_for('profile', user_id=current_user.id) }}" class="nav-item"><i class="fas fa-user"></i><span>My
+          Profile</span></a>
+      <a href="{{ url_for('edit_profile') }}"
+        class="nav-item {% if request.endpoint=='edit_profile' %}active{% endif %}"><i
+          class="fas fa-cog"></i><span>Settings</span></a>
+      <a href="{{ url_for('about') }}"
+        class="nav-item {% if request.endpoint in ['about','feedback'] %}active{% endif %}"><i
+          class="fas fa-circle-info"></i><span>About Us</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="{{ url_for('logout') }}" class="nav-item logout-item"><i
+          class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="fp-main">
+    <!-- TOPNAV -->
+    <header class="fp-topnav">
+      <div class="topnav-left">
+        <button class="hamburger" id="hamburger"><i class="fas fa-bars"></i></button>
+        <div class="sidebar-logo-phone">
+          <span class="logo-green">Farmers</span><span class="logo-orange">Pulse</span>
+        </div>
+        <form class="search-form" method="GET" action="{{ url_for('dashboard') }}">
+          <i class="fas fa-search"></i>
+          <input type="text" name="search" placeholder="Search..." value="{{ search }}">
+        </form>
+      </div>
+      <div class="topnav-right">
+        <div class="notif-btn" id="notifBtn">
+          <i class="fas fa-bell"></i>
+          {% if unread_count > 0 %}<span class="notif-badge">{{ unread_count }}</span>{% endif %}
+          <div class="notif-dropdown" id="notifDropdown">
+            <div class="notif-header"><span>Notifications</span><button onclick="markAllRead()"
+                class="mark-read-btn">Mark all read</button></div>
+            <div class="notif-list">
+              {% for n in notifs %}
+              <a href="{{ n['link'] or '#' }}" class="notif-item {% if not n['is_read'] %}unread{% endif %}">
+                <span class="notif-icon"><i
+                    class="fas fa-{% if n['notif_type']=='like' %}thumbs-up{% elif n['notif_type']=='comment' %}comment{% elif n['notif_type']=='follow' %}user-plus{% else %}bell{% endif %}"></i></span>
+                <div>
+                  <p>{{ n['content'] }}</p><small>{{ n['created_at'][:16] }}</small>
+                </div>
+              </a>
+              {% else %}
+              <div class="notif-empty"><i class="fas fa-bell-slash"></i>
+                <p>No notifications yet</p>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <a href="{{ url_for('profile', user_id=current_user.id) }}" class="user-chip">
+          {% if current_user['profile_pic'] %}<img
+            src="{{ url_for('static', filename='uploads/' + current_user['profile_pic']) }}" alt="">{% else %}<div
+            class="avatar-initials">{{ current_user['username'][0].upper() }}</div>{% endif %}
+          <span>{{ current_user['full_name'] or current_user['username'] }}</span>
+        </a>
+      </div>
+    </header>
+
+    <div class="fp-content">
+      <!-- FEED -->
+      <div class="feed-column">
+        <!-- Welcome -->
+        <div class="welcome-card">
+          <div>
+            <h2>Welcome back, <span>{{ current_user['full_name'] or current_user['username'] }}</span> 👋</h2>
+            <p>Stay updated with the latest agricultural insights tailored for you.</p>
+            {% if current_user['county'] or current_user['crop_types'] %}
+            <div class="profile-tags">
+              {% if current_user['county'] %}<span class="tag"><i class="fas fa-map-marker-alt"></i> {{
+                current_user['county'] }}</span>{% endif %}
+              {% for crop in (current_user['crop_types'] or '').split(',') %}{% if crop.strip() %}<span
+                class="tag tag-crop"><i class="fas fa-seedling"></i> {{ crop.strip() }}</span>{% endif %}{% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          <div class="welcome-icon"><i class="fas fa-tractor"></i></div>
+        </div>
+
+        <!-- Filters -->
+        <div class="category-filters">
+          {% if using_ai_feed %}
+          <span class="filter-btn active"
+            style="background:linear-gradient(135deg,#1565c0,#42a5f5);border-color:transparent;cursor:default;"><i
+              class="fas fa-robot"></i> AI Personalized</span>
+          {% endif %}
+          <a href="{{ url_for('dashboard') }}" class="filter-btn {% if not category %}active{% endif %}">All</a>
+          <a href="{{ url_for('dashboard', category='advisory') }}"
+            class="filter-btn {% if category=='advisory' %}active{% endif %}"><i class="fas fa-leaf"></i> Advisory</a>
+          <a href="{{ url_for('dashboard', category='market') }}"
+            class="filter-btn {% if category=='market' %}active{% endif %}"><i class="fas fa-chart-line"></i> Market</a>
+          <a href="{{ url_for('dashboard', category='weather') }}"
+            class="filter-btn {% if category=='weather' %}active{% endif %}"><i class="fas fa-cloud-sun"></i>
+            Weather</a>
+          <a href="{{ url_for('dashboard', category='pest') }}"
+            class="filter-btn {% if category=='pest' %}active{% endif %}"><i class="fas fa-bug"></i> Pest Alert</a>
+          <a href="{{ url_for('dashboard', category='livestock') }}"
+            class="filter-btn {% if category=='livestock' %}active{% endif %}"><i class="fas fa-horse"></i>
+            Livestock</a>
+        </div>
+
+        <!-- ══ SKELETON CARDS (shown while loading) ══ -->
+        <div id="skeleton-feed" aria-hidden="true">
+          {% for _ in range(3) %}
+          <div class="skeleton-post-card">
+            <div class="sk-meta">
+              <div class="skeleton sk-avatar"></div>
+              <div class="sk-author-block">
+                <div class="skeleton sk-line-name"></div>
+                <div class="skeleton sk-line-time"></div>
+              </div>
+            </div>
+            <div class="skeleton sk-image"></div>
+            <div class="sk-body">
+              <div class="skeleton sk-title"></div>
+              <div class="skeleton sk-text1"></div>
+              <div class="skeleton sk-text2"></div>
+              <div class="skeleton sk-text3"></div>
+            </div>
+            <div class="sk-actions">
+              <div class="skeleton sk-btn"></div>
+              <div class="skeleton sk-btn"></div>
+              <div class="skeleton sk-btn"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- ══ REAL POSTS (revealed after page load) ══ -->
+        <div id="real-feed" style="display:none;">
+
+        {% for item in posts_data %}
+        {% set p = item.post %}
+        {% set cat_images = {
+          'advisory':  ['https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80',
+                        'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=600&q=80',
+                        'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=80',
+                        'https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=600&q=80'],
+          'market':    ['https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600&q=80',
+                        'https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&q=80',
+                        'https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=600&q=80',
+                        'https://images.unsplash.com/photo-1605000797498-6f2d4d713ef0?w=600&q=80'],
+          'weather':   ['https://images.unsplash.com/photo-1592210454359-9043f067919b?w=600&q=80',
+                        'https://images.unsplash.com/photo-1504608524841-42584120d994?w=600&q=80',
+                        'https://images.unsplash.com/photo-1469122312224-c5846569feb1?w=600&q=80',
+                        'https://images.unsplash.com/photo-1561553543-e4c7b608b98d?w=600&q=80'],
+          'pest':      ['https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=80',
+                        'https://images.unsplash.com/photo-1560493676-04071c5f467b?w=600&q=80',
+                        'https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?w=600&q=80',
+                        'https://images.unsplash.com/photo-1592419044706-39796d40f98c?w=600&q=80'],
+          'livestock': ['https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=600&q=80',
+                        'https://images.unsplash.com/photo-1516467508483-a7212febe31a?w=600&q=80',
+                        'https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=600&q=80',
+                        'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&q=80'],
+          'general':   ['https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80',
+                        'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80',
+                        'https://images.unsplash.com/photo-1585664811087-47f65abbad64?w=600&q=80',
+                        'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?w=600&q=80']
+        } %}
+        {% set cat_key = p['category'] if p['category'] in cat_images else 'general' %}
+        {% set img_pool = cat_images[cat_key] %}
+        {% set resolved_img = p['image_url'] if p['image_url'] else img_pool[p['id'] % (img_pool | length)] %}
+        <article class="post-card {% if p['is_pinned'] %}post-pinned{% endif %}" data-post-id="{{ p['id'] }}">
+          {% if p['is_pinned'] %}<div class="pin-badge"><i class="fas fa-thumbtack"></i> Pinned</div>{% endif %}
+          {% if p['source'] == 'ai_model' %}<div class="ai-badge"><i class="fas fa-robot"></i> AI</div>{% endif %}
+          <div class="post-meta">
+            <div class="post-author">
+              <div class="avatar-sm">
+                <img src="/static/images/FarmersPulse_logo.png" alt="FarmersPulse Logo">
+              </div>
+              <div><strong>FarmersPulse</strong><span>{{ p['created_at'][:16] }}</span></div>
+            </div>
+            <span class="post-category cat-{{ p['category'] or 'general' }}">{{ p['category'] or 'General' }}</span>
+          </div>
+          <a href="{{ url_for('post_detail', post_id=p['id']) }}">
+            <img src="{{ resolved_img }}" alt="{{ p['title'] }}" class="post-image" loading="lazy"
+              onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80'">
+          </a>
+          <div class="post-body">
+            <h3 class="post-title"><a href="{{ url_for('post_detail', post_id=p['id']) }}">{{ p['title'] }}</a></h3>
+            <div class="post-text">
+              <p class="short-text">{{ p['short_text'] }}</p>
+              {% if p['full_text'] %}
+              <p class="full-text" style="display:none;">{{ p['full_text'] }}</p>
+              <button class="read-more-btn" onclick="toggleReadMore(this)">Read more <i class="fas fa-chevron-down"></i></button>
+              {% endif %}
+            </div>
+            {% if p['tags'] %}
+            <div class="post-tags">{% for tag in p['tags'].split(',') %}{% if tag.strip() %}<span class="post-tag">#{{ tag.strip() }}</span>{% endif %}{% endfor %}</div>
+            {% endif %}
+          </div>
+          <div class="post-actions-bar">
+            <div class="post-actions-left">
+              <button class="action-btn like-btn {% if liked_map.get(p['id']) == true %}active{% endif %}"
+                onclick="reactPost({{ p['id'] }}, true, this)">
+                <i class="fas fa-thumbs-up"></i><span class="like-count">{{ item.likes }}</span>
+              </button>
+              <button class="action-btn dislike-btn {% if liked_map.get(p['id']) == false %}active-dislike{% endif %}"
+                onclick="reactPost({{ p['id'] }}, false, this)">
+                <i class="fas fa-thumbs-down"></i><span class="dislike-count">{{ item.dislikes }}</span>
+              </button>
+              <a href="{{ url_for('post_detail', post_id=p['id']) }}#comments" class="action-btn"><i
+                  class="fas fa-comment"></i><span>{{ item.comments }}</span></a>
+              <button class="action-btn" onclick="sharePost({{ p['id'] }}, '{{ p['title']|e }}')"><i
+                  class="fas fa-share-nodes"></i></button>
+            </div>
+            <button class="action-btn save-btn {% if p['id'] in saved_ids %}saved{% endif %}"
+              onclick="savePost({{ p['id'] }}, this)">
+              <i class="fas fa-bookmark"></i>
+            </button>
+          </div>
+        </article>
+        {% else %}
+        <div class="empty-state"><i class="fas fa-newspaper"></i>
+          <h3>No posts yet</h3>
+          <p>The AI model will post farming insights here soon. Make sure Colab is running.</p>
+        </div>
+        {% endfor %}
+
+        </div><!-- end #real-feed -->
+
+        <!-- ══ INFINITE SCROLL SENTINEL + SKELETON LOADER ══ -->
+        <!-- This invisible div sits below all posts. When it enters the viewport,
+             the next page loads automatically. The skeleton shows while loading. -->
+        <div id="scroll-sentinel"></div>
+
+        <div id="infinite-skeleton" style="display:none;">
+          {% for _ in range(3) %}
+          <div class="skeleton-post-card">
+            <div class="sk-meta">
+              <div class="skeleton sk-avatar"></div>
+              <div class="sk-author-block">
+                <div class="skeleton sk-line-name"></div>
+                <div class="skeleton sk-line-time"></div>
+              </div>
+            </div>
+            <div class="skeleton sk-image"></div>
+            <div class="sk-body">
+              <div class="skeleton sk-title"></div>
+              <div class="skeleton sk-text1"></div>
+              <div class="skeleton sk-text2"></div>
+              <div class="skeleton sk-text3"></div>
+            </div>
+            <div class="sk-actions">
+              <div class="skeleton sk-btn"></div>
+              <div class="skeleton sk-btn"></div>
+              <div class="skeleton sk-btn"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div id="feed-end-msg" style="display:none;text-align:center;padding:28px 0 12px;color:var(--text-muted);font-size:13px;">
+          <i class="fas fa-seedling" style="margin-right:6px;"></i> You're all caught up!
+        </div>
+
+      </div><!-- end feed-column -->
+
+      <!-- RIGHT PANEL -->
+      <aside class="right-panel">
+        <!-- Skeleton right panel (shown while loading) -->
+        <div id="skeleton-right" aria-hidden="true">
+          <div class="skeleton-widget">
+            <div class="skeleton sk-widget-title"></div>
+            <div class="skeleton sk-widget-line"></div>
+            <div class="skeleton sk-widget-line short"></div>
+            <div class="skeleton sk-widget-line"></div>
+          </div>
+          <div class="skeleton-widget">
+            <div class="skeleton sk-widget-title"></div>
+            <div class="skeleton sk-widget-line"></div>
+            <div class="skeleton sk-widget-line short"></div>
+            <div class="skeleton sk-widget-line"></div>
+            <div class="skeleton sk-widget-line short"></div>
+          </div>
+        </div>
+        <!-- Real right panel (hidden until loaded) -->
+        <div id="real-right" style="display:none;">
+        <div class="profile-card-widget">
+          <div class="profile-card-cover"></div>
+          <div class="profile-card-info">
+            {% if current_user['profile_pic'] %}
+            <img src="{{ url_for('static', filename='uploads/' + current_user['profile_pic']) }}" alt=""
+              class="profile-avatar-lg">
+            {% else %}
+            <div class="profile-avatar-lg avatar-fallback">{{ current_user['username'][0].upper() }}</div>
+            {% endif %}
+            <h4>{{ current_user['full_name'] or current_user['username'] }}</h4>
+            {% if current_user['crop_types'] %}
+            <div class="profile-card-crops" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:6px 0;">
+              {% for crop in (current_user['crop_types'] or '').split(',') %}{% if crop.strip() %}<span class="tag tag-crop" style="font-size:11px;padding:2px 8px;"><i class="fas fa-seedling"></i> {{ crop.strip() }}</span>{% endif %}{% endfor %}
+            </div>
+            {% else %}<p style="color:var(--text-muted);font-size:13px;">Farmer</p>{% endif %}
+            {% if current_user['county'] %}<p class="county-tag"><i class="fas fa-map-marker-alt"></i> {{
+              current_user['county'] }}</p>{% endif %}
+            <a href="{{ url_for('edit_profile') }}" class="btn-outline-sm" style="margin-top:10px;">Edit Profile</a>
+          </div>
+        </div>
+        <div class="widget-card">
+          <h4 class="widget-title"><i class="fas fa-fire"></i> Browse by Category</h4>
+          <div class="trending-list">
+            <a href="{{ url_for('dashboard', category='advisory') }}" class="trend-item"><i class="fas fa-leaf"></i>
+              Advisory</a>
+            <a href="{{ url_for('dashboard', category='market') }}" class="trend-item"><i class="fas fa-chart-line"></i>
+              Market</a>
+            <a href="{{ url_for('dashboard', category='weather') }}" class="trend-item"><i class="fas fa-cloud-sun"></i>
+              Weather</a>
+            <a href="{{ url_for('dashboard', category='pest') }}" class="trend-item"><i class="fas fa-bug"></i> Pest
+              Alerts</a>
+            <a href="{{ url_for('dashboard', category='livestock') }}" class="trend-item"><i class="fas fa-horse"></i>
+              Livestock</a>
+          </div>
+        </div>
+        <div class="widget-card">
+          <h4 class="widget-title"><i class="fas fa-info-circle"></i> About FarmersPulse</h4>
+          <p class="widget-text">Your AI-powered farming hub. Personalized advisories, market updates, and weather
+            alerts for Kenyan farmers.</p>
+          <p class="widget-text" style="margin-top:8px;font-size:12px;color:var(--text-muted);">© FarmersPulse 2026 ·
+            Maasai Mara University</p>
+        </div>
+        </div><!-- end #real-right -->
+      </aside>
+    </div>
+  </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal-overlay" id="shareModal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Share Post</h3><button onclick="document.getElementById('shareModal').style.display='none'"><i
+          class="fas fa-times"></i></button>
+    </div>
+    <div class="share-options">
+      <button onclick="copyShareLink()" class="share-option-btn"><i class="fas fa-copy"></i> Copy Link</button>
+      <a id="waShare" href="#" target="_blank" class="share-option-btn whatsapp"><i class="fab fa-whatsapp"></i>
+        WhatsApp</a>
+      <a id="twShare" href="#" target="_blank" class="share-option-btn twitter"><i class="fab fa-x-twitter"></i>
+        Twitter/X</a>
+    </div>
+    <input type="text" id="shareUrl" class="share-url-input" readonly>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  /* ══════════════════════════════════════════════════
+     PAGE LOADER + SKELETON REVEAL
+  ══════════════════════════════════════════════════ */
+  const fpLoader  = document.getElementById('fp-page-loader');
+  const skFeed    = document.getElementById('skeleton-feed');
+  const realFeed  = document.getElementById('real-feed');
+  const skRight   = document.getElementById('skeleton-right');
+  const realRight = document.getElementById('real-right');
+
+  function revealDashboard() {
+    if (skFeed)    skFeed.style.display    = 'none';
+    if (realFeed)  realFeed.style.display  = 'block';
+    if (skRight)   skRight.style.display   = 'none';
+    if (realRight) realRight.style.display = 'block';
+    if (fpLoader)  fpLoader.classList.add('hidden');
+  }
+
+  if (document.readyState === 'complete') {
+    setTimeout(revealDashboard, 950);
+  } else {
+    window.addEventListener('load', () => setTimeout(revealDashboard, 700));
+    setTimeout(revealDashboard, 3500);
+  }
+
+  /* ══════════════════════════════════════════════════
+     API CALL MINI LOADER
+  ══════════════════════════════════════════════════ */
+  const apiLoader = document.getElementById('fp-api-loader');
+  let _apiCalls   = 0;
+
+  function apiStart() { _apiCalls++; if (apiLoader) apiLoader.classList.add('show'); }
+  function apiEnd()   { _apiCalls = Math.max(0, _apiCalls - 1); if (_apiCalls === 0 && apiLoader) apiLoader.classList.remove('show'); }
+  function fpFetch(url, opts) { apiStart(); return fetch(url, opts).finally(apiEnd); }
+
+  /* ══════════════════════════════════════════════════
+     INFINITE SCROLL
+     ── How it works ──────────────────────────────────
+     1. #scroll-sentinel is an invisible div sitting
+        just below the last post.
+     2. IntersectionObserver watches it. The moment it
+        enters the viewport (user scrolled near bottom),
+        loadNextPage() fires.
+     3. We fetch the next page from Flask (/dashboard?page=N)
+        and parse out only the .post-card elements from
+        #real-feed in the response HTML.
+     4. Those cards are injected before the sentinel so
+        the sentinel stays at the bottom, ready for the
+        next trigger.
+     5. While loading, #infinite-skeleton shows (3 ghost
+        cards). When done it hides again.
+     6. When all pages are loaded, the observer is
+        disconnected and #feed-end-msg shows.
+  ══════════════════════════════════════════════════ */
+  let currentPage  = {{ page }};
+  let totalPages   = {{ total_pages }};
+  let isLoading    = false;
+  let allLoaded    = false;
+
+  const sentinel       = document.getElementById('scroll-sentinel');
+  const infiniteSkel   = document.getElementById('infinite-skeleton');
+  const feedEndMsg     = document.getElementById('feed-end-msg');
+
+  // Preserve current URL params (category, search) so scroll respects filters
+  const urlParams = new URLSearchParams(window.location.search);
+
+  const scrollObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && !isLoading && !allLoaded) {
+      loadNextPage();
+    }
+  }, { rootMargin: '300px' }); // start loading 300px before sentinel is visible
+
+  if (sentinel && totalPages > 1) {
+    scrollObserver.observe(sentinel);
+  } else if (totalPages <= 1) {
+    // Only one page — show end message immediately after reveal
+    setTimeout(() => { if (feedEndMsg) feedEndMsg.style.display = 'block'; }, 1200);
+  }
+
+  function loadNextPage() {
+    if (isLoading || allLoaded) return;
+    isLoading = true;
+
+    // Show skeleton loader
+    if (infiniteSkel) infiniteSkel.style.display = 'block';
+
+    const nextPage = currentPage + 1;
+    urlParams.set('page', nextPage);
+
+    fetch(`/dashboard?${urlParams.toString()}`, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => {
+      if (!r.ok) throw new Error('Network error');
+      return r.text();
+    })
+    .then(html => {
+      // Parse the full HTML response
+      const parser  = new DOMParser();
+      const doc     = parser.parseFromString(html, 'text/html');
+
+      // Pull only the post cards from the next page's #real-feed
+      const newCards = doc.querySelectorAll('#real-feed .post-card');
+
+      if (newCards.length === 0) {
+        // No more posts
+        allLoaded = true;
+        scrollObserver.disconnect();
+        if (feedEndMsg) feedEndMsg.style.display = 'block';
+      } else {
+        // Insert new cards before the sentinel
+        newCards.forEach(card => {
+          realFeed.insertBefore(card, sentinel);
+        });
+        currentPage = nextPage;
+
+        // Check if this was the last page
+        if (currentPage >= totalPages) {
+          allLoaded = true;
+          scrollObserver.disconnect();
+          if (feedEndMsg) feedEndMsg.style.display = 'block';
+        }
+      }
+    })
+    .catch(err => {
+      console.error('Infinite scroll error:', err);
+    })
+    .finally(() => {
+      // Hide skeleton loader
+      if (infiniteSkel) infiniteSkel.style.display = 'none';
+      isLoading = false;
+    });
+  }
+
+  /* ══════════════════════════════════════════════════
+     SIDEBAR
+  ══════════════════════════════════════════════════ */
+  document.getElementById('hamburger').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('active');
+  });
+  document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
+  document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('active');
+  }
+
+  /* ══════════════════════════════════════════════════
+     NOTIFICATIONS
+  ══════════════════════════════════════════════════ */
+  document.getElementById('notifBtn').addEventListener('click', function(e) {
+    e.stopPropagation(); this.classList.toggle('open');
+  });
+  document.addEventListener('click', () => document.getElementById('notifBtn').classList.remove('open'));
+
+  function markAllRead() {
+    fpFetch('/notifications/read', { method: 'POST' }).then(() => {
+      document.querySelectorAll('.notif-item.unread').forEach(n => n.classList.remove('unread'));
+      const b = document.querySelector('.notif-badge'); if (b) b.remove();
+    });
+  }
+
+  /* ══════════════════════════════════════════════════
+     REACTIONS (like / dislike)
+  ══════════════════════════════════════════════════ */
+  function reactPost(postId, isLike, btn) {
+    fpFetch(`/like/${postId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_like: isLike })
+    }).then(r => r.json()).then(d => {
+      const card = btn.closest('.post-card');
+      card.querySelector('.like-count').textContent    = d.likes;
+      card.querySelector('.dislike-count').textContent = d.dislikes;
+      card.querySelectorAll('.like-btn,.dislike-btn').forEach(b => b.classList.remove('active','active-dislike'));
+      if (isLike) btn.classList.toggle('active'); else btn.classList.toggle('active-dislike');
+    });
+  }
+
+  /* ══════════════════════════════════════════════════
+     SAVE POST
+  ══════════════════════════════════════════════════ */
+  function savePost(postId, btn) {
+    fpFetch(`/save/${postId}`, { method: 'POST' })
+      .then(r => r.json())
+      .then(d => { btn.classList.toggle('saved', d.saved); });
+  }
+
+  /* ══════════════════════════════════════════════════
+     READ MORE / LESS
+  ══════════════════════════════════════════════════ */
+  function toggleReadMore(btn) {
+    const body  = btn.closest('.post-text');
+    const short = body.querySelector('.short-text');
+    const full  = body.querySelector('.full-text');
+    const exp   = full.style.display !== 'none';
+    full.style.display  = exp ? 'none'  : 'block';
+    short.style.display = exp ? 'block' : 'none';
+    btn.innerHTML = exp
+      ? 'Read more <i class="fas fa-chevron-down"></i>'
+      : 'Read less <i class="fas fa-chevron-up"></i>';
+  }
+
+  /* ══════════════════════════════════════════════════
+     SHARE MODAL
+  ══════════════════════════════════════════════════ */
+  let curShareUrl = '';
+  function sharePost(postId, title) {
+    fpFetch(`/share/${postId}`).then(r => r.json()).then(d => {
+      curShareUrl = d.url;
+      document.getElementById('shareUrl').value  = d.url;
+      document.getElementById('waShare').href    = `https://wa.me/?text=${encodeURIComponent(title + ' ' + d.url)}`;
+      document.getElementById('twShare').href    = `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(d.url)}`;
+      document.getElementById('shareModal').style.display = 'flex';
+    });
+  }
+  function copyShareLink() {
+    navigator.clipboard.writeText(curShareUrl);
+    showToast('Link copied!', 'success');
+  }
+</script>
+{% endblock %}
